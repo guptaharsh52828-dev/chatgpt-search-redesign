@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatGPT Search Redesign</title>
+  <!-- Poppins font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" />
+  <!-- Material Symbols (Rounded) -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0" />
+  <style>
+    :root {
+      --bg: #f5f6f7;
+      --panel: #ffffff;
+      --text: #161616;
+      --muted: #7a7a7a;
+      --border: #e6e7eb;
+      --pill-bg: #ffffff;
+      --pill-active: #eef2ff;
+      --pill-border: #e1e3e8;
+      --accent: #5a5af7;
+      --shadow: 0 12px 32px rgba(17, 23, 34, 0.08);
+      --Date: #bfbfbf;
+
+      /* Paste Figma "default 101" values here */
+      --default-101-padding-y: 24px;
+      --default-101-padding-x: 28px;
+      --default-101-radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      font-size: 16px;
+      color: var(--text);
+      display: grid;
+      place-items: start center;
+      padding: 32px;
+    }
+
+    .panel {
+      width: min(840px, 100%);
+      background: var(--panel);
+      border-radius: var(--default-101-radius);
+      box-shadow: var(--shadow);
+      padding: var(--default-101-padding-y) var(--default-101-padding-x) 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-bottom: 16px;
+    }
+
+    /* Filters layout from Figma */
+    .filters-wrapper {
+      display: flex;
+      padding-right: 16px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      align-self: stretch;
+      overflow: hidden;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .search {
+      flex: 1 1 260px;
+      background: var(--panel);
+      border: none;
+      border-radius: 0;
+      border-bottom: 0.5px solid var(--Date, #820707);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      /* gap between icon and placeholder */
+      padding: 12px 0 0;
+      height: 48px;
+      min-width: 260px;
+      box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.02);
+    }
+
+    .search svg {
+      width: 24px;
+      height: 24px;
+      stroke: var(--muted);
+    }
+
+    .search input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .search input::placeholder {
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      font-size: 16px;
+      color: var(--Date, #bfbfbf);
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .filters::-webkit-scrollbar {
+      height: 0;
+      display: none;
+    }
+
+    .filters::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+
+    .secondary-filters {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+      min-width: 0;
+      flex: 0 0 auto;
+    }
+
+    .pill {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      height: 48px;
+      padding: 0 24px;
+      border-radius: 100px;
+      border: 1px solid var(--pill-border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      flex: 0 0 auto;
+    }
+
+    .pill.active {
+      background: #eaf1ff;
+      color: var(--text);
+      border-color: #dbe2ff;
+      box-shadow: inset 0 0 0 1px rgba(90, 90, 247, 0.12);
+    }
+
+    .pill.is-open {
+      border-color: #161616;
+    }
+
+    .pill.is-applied {
+      background: #eaf1ff;
+      border-color: #c9d8ff;
+      color: #003399;
+    }
+
+    .pill.is-applied .chevron::before {
+      color: #003399;
+    }
+
+    .pill.is-applied .clear-btn {
+      color: #003399;
+    }
+
+    .pill .clear-btn {
+      margin-left: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      color: #3556d8;
+      background: transparent;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .clear-icon {
+      width: 20px;
+      height: 20px;
+      display: block;
+      filter: brightness(0) saturate(100%) invert(19%) sepia(82%) saturate(2643%) hue-rotate(221deg) brightness(97%) contrast(102%);
+    }
+
+    .pill .pill-icon {
+      width: 20px;
+      height: 20px;
+      flex: 0 0 20px;
+      display: block;
+    }
+
+    .pill.is-applied .pill-icon {
+      filter: brightness(0) saturate(100%) invert(19%) sepia(82%) saturate(2643%) hue-rotate(221deg) brightness(97%) contrast(102%);
+    }
+
+    .pill.is-applied .pill-icon.no-tint {
+      filter: none !important;
+    }
+
+    .content-type-input {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 0.5px solid #d7e2ff;
+      border-radius: 12px;
+      margin: 4px 4px 8px 4px;
+      background: #fff;
+      box-shadow: inset 0 0 0 2px rgba(53, 86, 216, 0.15);
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+    }
+
+    .project-list {
+      max-height: 192px;
+      height: 192px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .project-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 56px;
+      padding: 4px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .project-option:hover {
+      background: #f9fafb;
+    }
+
+    .project-option img {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+
+    .content-type-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .content-type-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: transparent;
+      color: #1f2a4a;
+      font-size: 13px;
+      border: 1px solid #d6e1ff;
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+    }
+
+    .content-type-chip .chip-clear {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: transparent;
+      color: #1f2a4a;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .content-type-input-field {
+      border: none;
+      outline: none;
+      font-size: 16px;
+      min-width: 120px;
+      flex: 1 1 120px;
+      background: transparent;
+      color: var(--Date, #bfbfbf);
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      pointer-events: auto;
+    }
+
+    .content-type-input-field::placeholder {
+      font-size: 16px;
+      color: var(--Date, #bfbfbf);
+    }
+
+    .content-type-input.has-chips .content-type-input-field::placeholder {
+      color: transparent;
+    }
+
+    /* Wrapper for the "Search Only Chat Titles" filter */
+    .primary-pill-wrapper {
+      display: flex;
+      align-items: stretch;
+      padding-right: 12px;
+      /* makes wrapper 12px wider than pill */
+      border-right: 0.5px solid var(--border);
+      /* separator on the outer edge */
+    }
+
+    .pill .chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      height: 12px;
+      flex: 0 0 12px;
+      margin-top: 0;
+    }
+
+    .pill .chevron::before {
+      content: "";
+      display: block;
+      width: 6px;
+      height: 6px;
+      border: solid currentColor;
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+      transform-origin: 50% 50%;
+      transition: transform 0.15s ease;
+    }
+
+    .pill.is-open .chevron::before {
+      transform: rotate(-135deg);
+    }
+
+    .list {
+      border-top: none;
+      padding-top: 16px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .section-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin: 4px 0;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      transition: background 0.15s ease;
+    }
+
+    .item:hover {
+      background: #f9fafb;
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .material-symbols-rounded {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+      line-height: 1;
+    }
+
+    .chat-icon {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    .calendar-dropdown {
+      width: min(371px, calc(100vw - 32px));
+      min-width: 280px;
+      padding: 16px;
+      border-radius: 4px;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(40, 40, 40, 0.3);
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      box-sizing: border-box;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      padding: 7px 0;
+    }
+
+    .calendar-month {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .calendar-month-text {
+      font-size: 20px;
+      font-weight: 600;
+      color: #595858;
+      letter-spacing: 0.38px;
+      line-height: 24px;
+    }
+
+    .calendar-chevron {
+      width: 6.69px;
+      height: 11.44px;
+      display: block;
+    }
+
+    .calendar-arrows {
+      width: 51px;
+      height: 17.32px;
+      display: block;
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .calendar-arrows img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .calendar-nav {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .calendar-nav.prev {
+      left: 0;
+    }
+
+    .calendar-nav.next {
+      right: 0;
+    }
+
+    .calendar-quick {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+
+    .calendar-quick-item {
+      padding: 8px 0;
+      font-size: 16px;
+      font-weight: 500;
+      color: #4c4c4d;
+      line-height: 18px;
+      letter-spacing: -0.078px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      margin-bottom: 10px;
+    }
+
+    .calendar-weekday {
+      font-size: 13px;
+      color: rgba(60, 60, 67, 0.3);
+      text-align: center;
+      letter-spacing: -0.078px;
+      line-height: 18px;
+      height: 18px;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-auto-rows: 32px;
+      column-gap: clamp(8px, 4vw, 19px);
+      row-gap: clamp(12px, 5vw, 20px);
+      user-select: none;
+      position: relative;
+    }
+
+    .calendar-row-highlight {
+      position: absolute;
+      background: #eaf1ff;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .calendar-cell {
+      width: 32px;
+      height: 32px;
+      border-radius: 1000px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #4d4d4d;
+      letter-spacing: 0.38px;
+      line-height: 24px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .calendar-cell--fill {
+      background: #eaf1ff;
+    }
+
+    .calendar-cell--outline {
+      border: none;
+    }
+
+    .calendar-cell--today {
+      background: #eaf1ff;
+      border: 2px solid #003399;
+    }
+
+    .calendar-cell--range,
+    .calendar-cell--preview {
+      background: transparent;
+      border-radius: 1000px;
+      border: none;
+    }
+
+    .calendar-cell--disabled {
+      color: rgba(77, 77, 77, 0.3);
+      pointer-events: none;
+      cursor: default;
+    }
+
+    .calendar-cell--empty {
+      visibility: hidden;
+    }
+
+    .thumb {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      display: block;
+      object-fit: cover;
+      border-radius: 999px;
+      background: #f0f1f5;
+    }
+
+    .thumb.square {
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid var(--border);
+      display: grid;
+      place-items: center;
+      background: #fff;
+      flex: 0 0 auto;
+    }
+
+    .checkbox.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #4ade80;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      flex: 0 0 auto;
+    }
+
+    .bot-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #f0f1f5;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .title {
+      font-size: 16px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .content-type-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .content-type-icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+
+    .date {
+      color: var(--Date, #bfbfbf);
+      font-family: "Poppins", -apple-system, system-ui, sans-serif;
+      font-size: 16px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+    }
+
+    .scroll-area {
+      height: 520px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .scroll-area::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .scroll-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scroll-area::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 999px;
+    }
+
+    .load-more {
+      font-size: 16px;
+      color: var(--Date, #bfbfbf);
+      text-align: center;
+      padding: 6px 0;
+      background: linear-gradient(0deg, #fff 0%, rgba(255, 255, 255, 0) 113.33%);
+    }
+
+    .home-panel {
+      gap: 16px;
+    }
+
+    .home-search-row {
+      padding-bottom: 0;
+    }
+
+    .home-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .home-new-chat {
+      background: #f8f8f8;
+      border-radius: 8px;
+      height: 48px;
+      margin: 8px 0 24px 0;
+      padding: 16px 16px 16px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #333333;
+      font-size: 16px;
+    }
+
+    .home-new-icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+    }
+
+    .home-results {
+      position: relative;
+      height: 514px;
+      overflow-y: auto;
+      padding: 0 0 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #ffffff;
+      border-radius: 8px;
+    }
+
+    .home-results::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
+
+    .home-results {
+      scrollbar-width: none;
+    }
+
+    .home-results {
+      -ms-overflow-style: none;
+    }
+
+    .home-section {
+      font-size: 14px;
+      color: #a6a6a6;
+      font-weight: 300;
+      margin: 0 0 4px 0;
+    }
+
+    .home-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 24px;
+    }
+
+    .home-group:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .home-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      gap: 4px;
+    }
+
+    .home-item-left {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .home-item-icon {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 16px;
+    }
+
+    .home-item-title {
+      font-size: 16px;
+      color: #333333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .home-item-date {
+      font-size: 16px;
+      color: #737373;
+      flex: 0 0 auto;
+    }
+
+    .home-scroll-thumb {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15.368px;
+      height: 73px;
+      background: #d9d9d9;
+      border-radius: 10000px;
+      pointer-events: none;
+    }
+
+    .home-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 24px 16px;
+      color: #a6a6a6;
+      text-align: center;
+    }
+
+    .home-empty.is-hidden {
+      display: none;
+    }
+
+    .home-empty-icon {
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .home-empty-title {
+      font-size: 16px;
+      color: #333333;
+    }
+
+    .home-empty-subtitle {
+      font-size: 14px;
+      color: #a6a6a6;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="panel home-panel">
+    <div class="search-row home-search-row">
+      <label class="search">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="6" stroke-width="2" />
+          <path d="M16 16l4 4" stroke-width="2" />
+        </svg>
+        <input type="text" placeholder="Search Chats and messages" />
+      </label>
+    </div>
+
+    <div class="home-content">
+      <div class="home-empty is-hidden">
+        <div class="home-empty-icon">🔍</div>
+        <div class="home-empty-title">No results found</div>
+        <div class="home-empty-subtitle">Try a different keyword</div>
+      </div>
+      <div class="home-new-chat">
+        <img class="home-new-icon" src="https://www.figma.com/api/mcp/asset/6741d0e0-6550-4b4b-a411-7a8f10eeb166" alt="" />
+        <span>New Chat</span>
+      </div>
+
+      <div class="home-results">
+        <div class="home-section">Today</div>
+        <div class="home-group">
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Device</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Benifits of eating Apple</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Pie Recipie</div>
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="home-section">Yesterday</div>
+        <div class="home-group">
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Device</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Benifits of eating Apple</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Pie Recipie</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Pie Recipie</div>
+            </div>
+            
+          </div>
+        </div>
+
+        <div class="home-section">Last 7 days</div>
+        <div class="home-group">
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Mac Health Checklist</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Apple Storage Tips</div>
+            </div>
+            
+          </div>
+          <div class="home-item">
+            <div class="home-item-left">
+              <img class="home-item-icon" src="https://www.figma.com/api/mcp/asset/2635a6d0-61a1-4228-8ce2-6b1499aa5462" alt="" />
+              <div class="home-item-title">Healthy Apple Smoothie</div>
+            </div>
+            
+          </div>
+        </div>
+        <!-- Scrollbar hidden intentionally -->
+      </div>
+    </div>
+  </div>
+  <script>
+    const homeSearchInput = document.querySelector('.search input');
+    const homeEmpty = document.querySelector('.home-empty');
+    const homeContent = document.querySelector('.home-content');
+
+    const homeChats = [
+      'Apple Device',
+      'Benifits of eating Apple',
+      'Apple Pie Recipie'
+    ];
+    const homeMessages = [
+      'Best Fruits to eat',
+      'Sentence formation',
+      'Building Fruit game',
+      'Fruits and their nutrients'
+    ];
+
+    const hasMatch = (query) => {
+      if (!query) return true;
+      const q = query.toLowerCase();
+      return homeChats.some(t => t.toLowerCase().includes(q)) ||
+        homeMessages.some(t => t.toLowerCase().includes(q));
+    };
+
+    homeSearchInput.addEventListener('input', (e) => {
+      const value = e.target.value.trim();
+      homeEmpty.classList.add('is-hidden');
+      if (!value) return;
+      if (hasMatch(value)) {
+        window.location.href = `chat.html?q=${encodeURIComponent(value)}`;
+      }
+    });
+
+    homeSearchInput.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const value = e.target.value.trim();
+      if (!value) {
+        homeEmpty.classList.add('is-hidden');
+        return;
+      }
+      if (hasMatch(value)) {
+        window.location.href = `chat.html?q=${encodeURIComponent(value)}`;
+      } else {
+        homeEmpty.classList.remove('is-hidden');
+      }
+    });
+  </script>
+</body>
+
+</html>
